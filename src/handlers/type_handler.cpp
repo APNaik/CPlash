@@ -1,23 +1,25 @@
 #include "type_handler.hpp"
 
-#include <iostream>
-#include <vector>
 #include <algorithm>
 #include <cstdlib>
-#include <string>
+#include <array>
+#include <iostream>
 #include <sstream>
 #include <filesystem>
+#include <string_view>
 #include <system_error>
 
 namespace fs = std::filesystem;
 
-std::vector<std::string> builtins {
-	{"exit", "echo", "type"}
-};
-
 namespace {
 
-bool is_builtin_command(const std::string& command_name) {
+constexpr std::array<std::string_view, 3> builtins{
+  "exit",
+  "echo",
+  "type",
+};
+
+bool is_builtin_command(std::string_view command_name) {
 	return std::find(builtins.begin(), builtins.end(), command_name) != builtins.end();
 }
 
