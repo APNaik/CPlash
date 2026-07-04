@@ -1,33 +1,38 @@
 #include <iostream>
-#include <string>
+
+#include "command_registry.hpp"
+#include "parser.hpp"
 
 int main() {
-  // Flush after every std::cout / std:cerr
   std::cout << std::unitbuf;
   std::cerr << std::unitbuf;
 
-  // REPL
-  while(1){
+  // REPL 
+  while (true) {
     std::cout << "$ ";
-    std::string command;
-    std::getline(std::cin, command);
-    if(command == "exit"){
+
+    std::string input;
+    if (!std::getline(std::cin, input)) {
       break;
     }
-    else if(command.substr(0, 5) == "echo "){
-      std::cout << command.substr(5) << "\n";
+
+    const Command command = parse_command(input);
+    if (command.empty) {
+      continue;
     }
-    else if(command.substr(0, 5) == "type "){
-      std::string next_command = command.substr(5);
-      if(next_command == "exit" || next_command == "type" || next_command == "echo"){
-        std::cout << next_command << " is a shell builtin\n";
-      }
-      else{
-        std::cout << next_command << ": not found" << std::endl;
-      }
+
+    if (command.raw == "exit") {
+      break;
     }
-    else std::cout << command << ": command not found" << std::endl;
+
+    const auto handler = get_handler(command.raw);
+    if (!handler) {
+      std::cout << command.raw << ": command not found\n";
+      continue;
+    }
+
+    handler(command);
   }
-  
+
   return 0;
 }
