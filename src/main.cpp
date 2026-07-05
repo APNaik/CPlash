@@ -16,7 +16,7 @@ int main() {
       break;
     }
 
-    const Command command = parse_command(input);
+    const Command command { parse_command(input) };
     if (command.empty) {
       continue;
     }
@@ -25,7 +25,7 @@ int main() {
       break;
     }
 
-    const auto handler = get_handler(command.raw);
+    const auto handler { get_handler(command.raw) };
     if (!handler) {
       std::cout << command.raw << ": command not found\n";
       continue;
