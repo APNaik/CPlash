@@ -1,6 +1,7 @@
 #include "command_registry.hpp"
 
 #include "handlers/echo_handler.hpp"
+#include "handlers/execution_handler.hpp"
 #include "handlers/type_handler.hpp"
 
 Handler get_handler(const std::string& command_name) {
@@ -12,5 +13,5 @@ Handler get_handler(const std::string& command_name) {
     return handle_type;
   }
 
-  return {};
+  return handle_execution;
 }

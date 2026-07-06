@@ -17,11 +17,11 @@ bool is_builtin_command(std::string_view command_name) {
 }  // empty namespace keeps the functions private to the current file
 
 void handle_execution(const Command& command) {
-  if (command.arguments.empty()) {
+  if (command.empty) {
     return;
   }
 
-  const std::string& command_name = command.arguments.front();
+  const std::string& command_name = command.raw;
 
   if (is_builtin_command(command_name)) {
     return;
