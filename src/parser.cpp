@@ -34,17 +34,24 @@ Command parse_command(const std::string& input) {
 
     std::string argument;
     bool inside_single_quote { false };
+    bool inside_double_quote { false };
 
     while (argument_start < input.size()) {
       const char current { input[argument_start] };
 
-      if (current == '\'') {
+      if (current == '\'' && !inside_double_quote) {
         inside_single_quote = !inside_single_quote;
         ++argument_start;
         continue;
       }
 
-      if (current == ' ' && !inside_single_quote) {
+      if (current == '"' && !inside_single_quote) {
+        inside_double_quote = !inside_double_quote;
+        ++argument_start;
+        continue;
+      }
+
+      if (current == ' ' && !inside_single_quote && !inside_double_quote) {
         break;
       }
 
@@ -52,7 +59,7 @@ Command parse_command(const std::string& input) {
       ++argument_start;
     }
 
-    if (inside_single_quote) {
+    if (inside_single_quote || inside_double_quote) {
       std::cerr << "Quotes not closed properly" << std::endl;
       command.empty = true;
       return command;
