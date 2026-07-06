@@ -41,7 +41,7 @@ Command parse_command(const std::string& input) {
     while (argument_start < input.size()) {
       const char current { input[argument_start] };
 
-      if(current == '\\' && argument_start + 1 < input.size()){
+      if (current == '\\' && argument_start + 1 < input.size()) {
         argument.push_back(input[++argument_start]);
         ++argument_start;
         continue;
