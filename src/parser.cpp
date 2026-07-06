@@ -1,5 +1,7 @@
 #include "parser.hpp"
 
+#include <iostream>
+
 namespace {
 std::size_t find_first_non_space(const std::string& text) {
   return text.find_first_not_of(' ');
@@ -28,6 +30,21 @@ Command parse_command(const std::string& input) {
     argument_start = input.find_first_not_of(' ', argument_start);
     if (argument_start == std::string::npos) {
       break;
+    }
+
+    // If first non space character is a single or a double quote
+    if(input[argument_start] == '\''){
+      const std::size_t closing_quote { input.find_first_of('\'', argument_start + 1) };
+      if(closing_quote == std::string::npos){
+        std::cerr << "Quotes not closed properly" << std::endl;
+        command.empty = true;
+        return command;
+      }
+
+      const std::string quoted_arg { input.substr(argument_start + 1, closing_quote - argument_start - 1) };
+      command.arguments.push_back(quoted_arg);
+      argument_start = find_first_space(input, closing_quote);
+      continue;
     }
 
     const std::size_t argument_end { find_first_space(input, argument_start) };
