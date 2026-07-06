@@ -42,9 +42,11 @@ Command parse_command(const std::string& input) {
       const char current { input[argument_start] };
 
       if (current == '\\' && argument_start + 1 < input.size()) {
-        argument.push_back(input[++argument_start]);
-        ++argument_start;
-        continue;
+        if(!inside_double_quote && !inside_single_quote){
+          argument.push_back(input[++argument_start]);
+          ++argument_start;
+          continue;
+        }
       }
 
       if (current == '\'' && !inside_double_quote) {
