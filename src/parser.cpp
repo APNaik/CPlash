@@ -33,11 +33,19 @@ Command parse_command(const std::string& input) {
     }
 
     std::string argument;
+
+    // To handle single and double quoted arguments
     bool inside_single_quote { false };
     bool inside_double_quote { false };
 
     while (argument_start < input.size()) {
       const char current { input[argument_start] };
+
+      if(current == '\\' && argument_start + 1 < input.size()){
+        argument.push_back(input[++argument_start]);
+        ++argument_start;
+        continue;
+      }
 
       if (current == '\'' && !inside_double_quote) {
         inside_single_quote = !inside_single_quote;
