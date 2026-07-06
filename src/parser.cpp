@@ -32,24 +32,34 @@ Command parse_command(const std::string& input) {
       break;
     }
 
-    // If first non space character is a single or a double quote
-    if(input[argument_start] == '\''){
-      const std::size_t closing_quote { input.find_first_of('\'', argument_start + 1) };
-      if(closing_quote == std::string::npos){
-        std::cerr << "Quotes not closed properly" << std::endl;
-        command.empty = true;
-        return command;
+    std::string argument;
+    bool inside_single_quote { false };
+
+    while (argument_start < input.size()) {
+      const char current { input[argument_start] };
+
+      if (current == '\'') {
+        inside_single_quote = !inside_single_quote;
+        ++argument_start;
+        continue;
       }
 
-      const std::string quoted_arg { input.substr(argument_start + 1, closing_quote - argument_start - 1) };
-      command.arguments.push_back(quoted_arg);
-      argument_start = find_first_space(input, closing_quote);
-      continue;
+      if (current == ' ' && !inside_single_quote) {
+        break;
+      }
+
+      argument.push_back(current);
+      ++argument_start;
     }
 
-    const std::size_t argument_end { find_first_space(input, argument_start) };
-    command.arguments.push_back(input.substr(argument_start, argument_end - argument_start));
-    argument_start = argument_end;
+    if (inside_single_quote) {
+      std::cerr << "Quotes not closed properly" << std::endl;
+      command.empty = true;
+      return command;
+    }
+
+    command.arguments.push_back(argument);
+    argument_start = find_first_space(input, argument_start);
   }
 
   return command;
