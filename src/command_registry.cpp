@@ -1,5 +1,4 @@
 #include "command_registry.hpp"
-
 #include "handlers/echo_handler.hpp"
 #include "handlers/execution_handler.hpp"
 #include "handlers/type_handler.hpp"
