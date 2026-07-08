@@ -7,8 +7,12 @@ std::size_t find_first_non_space(const std::string& text) {
   return text.find_first_not_of(' ');
 }
 
-bool is_stdout_redirect_at(const std::string& input, std::size_t idx) {
-  return input[idx] == '>' || (input[idx] == '1' && idx + 1 < input.size() && input[idx + 1] == '>');
+bool is_redirect_at(const std::string& input, std::size_t idx) {
+  if(input[idx] == '>') return true;
+
+  if((input[idx] == '1' || input[idx] == '2') && idx + 1 < input.length() && input[idx+1] == '>') return true;
+
+  return false;
 }
 
 bool parse_token(const std::string &input, std::size_t &idx, std::string &token, bool* token_was_quoted = nullptr) {
@@ -19,12 +23,35 @@ bool parse_token(const std::string &input, std::size_t &idx, std::string &token,
   while (idx < input.size()) {
     const char current { input[idx] };
 
-    if (!inside_single_quote && !inside_double_quote && is_stdout_redirect_at(input, idx)) {
+    if (!inside_single_quote && !inside_double_quote && is_redirect_at(input, idx)) {
       if (!token.empty()) {
         break;
       }
 
-      token = current == '>' ? ">" : "1>";
+      if(input[idx] == '>'){
+        if(input[idx+1] == '>'){
+          token = ">>";
+        }
+        else {
+          token = ">";
+        }
+      }
+      else if(idx + 2 < input.length() && input[idx+2] == '>'){
+        if(input[idx] == '1'){
+          token = "1>>";
+        }
+        else{
+          token = "2>>";
+        }
+      }
+      else{
+        if(input[idx] == '1'){
+          token = "1>";
+        }
+        else{
+          token = "2>";
+        }
+      }
       idx += token.size();
       return true;
     }
@@ -74,8 +101,9 @@ bool parse_token(const std::string &input, std::size_t &idx, std::string &token,
   return !inside_single_quote && !inside_double_quote;
 }
 
-bool is_stdout_redirect_token(const std::string& token) {
-  return token == ">" || token == "1>";
+bool is_redirect_token(const std::string& token) {
+  return token == ">" || token == "1>" || token == "2>" ||
+         token == ">>" || token == "1>>" || token == "2>>";
 }
 
 }  // empty namespace keeps the functions private to the current file
@@ -111,7 +139,8 @@ Command parse_command(const std::string& input) {
       return command;
     }
 
-    if (!argument_was_quoted && is_stdout_redirect_token(argument)) {
+    if (!argument_was_quoted && is_redirect_token(argument)) {
+      std::string redirect_opt { argument };  // Can be >, 1>, 2>, >>, 1>> or 2>>
       argument_start = input.find_first_not_of(' ', argument_start);
       if (argument_start == std::string::npos) {
         std::cerr << "Redirection target missing" << std::endl;
@@ -127,13 +156,33 @@ Command parse_command(const std::string& input) {
         return command;
       }
 
-      if (!redirect_path_was_quoted && is_stdout_redirect_token(redirect_path)) {
+      // Redirection token cannot be followed by another unquoted redirection
+      // token immediately.
+      if (!redirect_path_was_quoted && is_redirect_token(redirect_path)) {
         std::cerr << "Redirection target missing" << std::endl;
         command.empty = true;
         return command;
       }
 
-      command.stdout_redirect_path = redirect_path;
+      if (redirect_opt == ">" || redirect_opt == "1>" || redirect_opt == ">>" || redirect_opt == "1>>") {
+        // Check if it's an append operation
+        if (redirect_opt == ">>" || redirect_opt == "1>>") {
+            command.stdout_mode = Mode::APPEND;
+        } else {
+            command.stdout_mode = Mode::TRUNC;
+        }
+        command.stdout_redirect_path = redirect_path;
+      } 
+      else if (redirect_opt == "2>" || redirect_opt == "2>>") {
+        // Check if it's an append operation
+        if (redirect_opt == "2>>") {
+          command.stderr_mode = Mode::APPEND;
+        } else {
+          command.stderr_mode = Mode::TRUNC;
+        }
+        command.stderr_redirect_path = redirect_path;
+      }
+      
       continue;
     }
 

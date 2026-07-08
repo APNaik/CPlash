@@ -8,22 +8,33 @@
 
 namespace {
 
-class StdoutRedirect {
+// RAII implementation
+class FileRedirect {
 public:
-  explicit StdoutRedirect(const std::string& path)
-    : original_stdout_fd { dup(STDOUT_FILENO) },
-      redirected_fd { open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644) } {
-    if (original_stdout_fd == -1) {
+  explicit FileRedirect(const std::string& path, const int target_fd, Mode MODE)
+    : _original_fd { dup(target_fd) },
+      _target_fd { target_fd } {
+    int flags = O_WRONLY | O_CREAT;
+    if(MODE == Mode::APPEND){
+      flags |= O_APPEND;
+    }
+    else{
+      flags |= O_TRUNC;
+    }
+
+    _redirected_fd = open(path.c_str(), flags, 0644);
+
+    if (_original_fd == -1) {
       std::perror("dup");
       return;
     }
 
-    if (redirected_fd == -1) {
+    if (_redirected_fd == -1) {
       std::perror(path.c_str());
       return;
     }
 
-    if (dup2(redirected_fd, STDOUT_FILENO) == -1) {
+    if (dup2(_redirected_fd, target_fd) == -1) {
       std::perror("dup2");
       return;
     }
@@ -31,31 +42,32 @@ public:
     active = true;
   }
 
-  ~StdoutRedirect() {
-    std::cout.flush();
+  ~FileRedirect() {
+    if(_target_fd == STDOUT_FILENO){
+      std::cout.flush();
+    }
+    else if(_target_fd == STDERR_FILENO){
+      std::cerr.flush();
+    }
 
-    if (active && original_stdout_fd != -1) {
-      if (dup2(original_stdout_fd, STDOUT_FILENO) == -1) {
-        std::perror("dup2");
+    if(active && _original_fd != -1){
+      if(dup2(_original_fd, _target_fd) == -1){
+        std::perror("dup2 restore");
       }
     }
 
-    if (redirected_fd != -1) {
-      close(redirected_fd);
-    }
-
-    if (original_stdout_fd != -1) {
-      close(original_stdout_fd);
-    }
-  }
+    if(_original_fd != -1) close(_original_fd);
+    if(_redirected_fd != -1) close(_redirected_fd);
+  } 
 
   bool ok() const {
     return active;
   }
 
 private:
-  int original_stdout_fd { -1 };
-  int redirected_fd { -1 };
+  int _original_fd { -1 };
+  int _redirected_fd { -1 };
+  int _target_fd { -1 };
   bool active { false };
 };
 
@@ -88,15 +100,20 @@ int main() {
       std::cout << command.raw << ": command not found\n";
       continue;
     }
+    
+    std::optional<FileRedirect> _stdout;
+    std::optional<FileRedirect> _stderr;
 
-    if (command.stdout_redirect_path.has_value()) {
-      StdoutRedirect redirect { command.stdout_redirect_path.value() };
-      if (!redirect.ok()) {
-        continue;
-      }
-
-      handler(command);
-      continue;
+    // We have > or 1> token
+    if(command.stdout_redirect_path.has_value()){
+      _stdout.emplace(command.stdout_redirect_path.value(), STDOUT_FILENO, command.stdout_mode);
+      if(!_stdout->ok()) continue;
+    }
+    
+    // We have 2> token
+    if(command.stderr_redirect_path.has_value()){
+      _stderr.emplace(command.stderr_redirect_path.value(), STDERR_FILENO, command.stderr_mode);
+      if(!_stderr->ok()) continue;
     }
 
     handler(command);

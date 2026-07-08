@@ -1,5 +1,7 @@
 #include "find_check_perms.hpp"
 
+namespace fs = std::filesystem;
+
 std::optional<std::string> find_and_check_permissions(const std::vector<std::string> &directories, const std::string &command_name) {
   for (const std::string &dir : directories) {
     fs::path search_path { fs::path(dir) / command_name };
