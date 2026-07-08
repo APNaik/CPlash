@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include "handlers/completion_handler.hpp"
 #include "command_registry.hpp"
 #include "parser.hpp"
 
@@ -77,14 +78,26 @@ int main() {
   std::cout << std::unitbuf;
   std::cerr << std::unitbuf;
 
+  rl_attempted_completion_function = completion;
+  rl_bind_key('\t', rl_complete);
+  
   // REPL 
   while (true) {
-    std::cout << "$ ";
+    char *raw_input = readline("$ ");
 
-    std::string input;
-    if (!std::getline(std::cin, input)) {
+    if(!raw_input){
+      std::cout << "\n";
       break;
     }
+
+    std::string input(raw_input);
+    
+    free(raw_input);
+    if(input.empty()){
+      continue;
+    }
+
+    add_history(input.c_str());
 
     const Command command { parse_command(input) };
     if (command.empty) {
