@@ -1,6 +1,12 @@
+/*
+This is a router to each handler. It returns a callable object that handles the execution of 
+matching command.
+The handler returned by the router is wrapped in a polymorphic function wrapper inside main.cpp
+*/
+
 #include "command_registry.hpp"
 #include "handlers/echo_handler.hpp"
-#include "handlers/execution_handler.hpp"
+#include "handlers/executables_handler.hpp"
 #include "handlers/type_handler.hpp"
 
 Handler get_handler(const std::string& command_name) {
@@ -12,5 +18,5 @@ Handler get_handler(const std::string& command_name) {
     return handle_type;
   }
 
-  return handle_execution;
+  return handle_executables;
 }

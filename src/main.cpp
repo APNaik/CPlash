@@ -78,6 +78,9 @@ int main() {
   std::cout << std::unitbuf;
   std::cerr << std::unitbuf;
 
+  // Cache PATH system files once on startup
+  init_executables_registry();
+  
   rl_attempted_completion_function = completion;
   rl_bind_key('\t', rl_complete);
   

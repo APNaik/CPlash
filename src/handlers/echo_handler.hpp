@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "../parser.hpp"
+#include "../command.hpp"
 
 inline void handle_echo(const Command& command) {
   for (std::size_t index = 0; index < command.arguments.size(); ++index) {

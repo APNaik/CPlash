@@ -1,6 +1,7 @@
 #include "helpers/extract_PATH_dirs.hpp"
 #include "helpers/find_check_perms.hpp"
 #include "helpers/builtins.hpp"
+#include "executables_handler.hpp"
 #include "../command.hpp"
 
 #include <algorithm>
@@ -16,7 +17,7 @@ bool is_builtin_command(std::string_view command_name) {
 
 }  // empty namespace keeps the functions private to the current file
 
-void handle_execution(const Command& command) {
+void handle_executables(const Command& command) {
   if (command.empty) {
     return;
   }

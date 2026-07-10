@@ -1,5 +1,5 @@
 #pragma once
 
-#include "../parser.hpp"
+#include "../command.hpp"
 
 void handle_type(const Command& command);
