@@ -43,8 +43,13 @@ char* generator(const char* text, int state){
 
 char** completion(const char* text, int start, int end){
   // rl_attempted_completion_over = 1;    // Prevents readline from falling back to file completion
+  if(start == 0){
+    rl_attempted_completion_over = 1;
+    return rl_completion_matches(text, generator);
+  }
   
-  return rl_completion_matches(text, generator);
+  rl_attempted_completion_over = 0; 
+  return nullptr;
 }
 
 void init_executables_registry(){
