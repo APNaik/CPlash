@@ -42,7 +42,7 @@ char* generator(const char* text, int state){
 }
 
 char** completion(const char* text, int start, int end){
-  rl_attempted_completion_over = 1;    // Prevents readline from falling back to file completion
+  // rl_attempted_completion_over = 1;    // Prevents readline from falling back to file completion
   
   return rl_completion_matches(text, generator);
 }
