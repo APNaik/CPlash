@@ -189,5 +189,10 @@ Command parse_command(const std::string& input) {
     command.arguments.push_back(argument);
   }
 
+  // Recognizing background jobs with "&"
+  if(!command.arguments.empty() && command.arguments.back() == "&"){
+    command.run_in_background = true;
+    command.arguments.pop_back();
+  }
   return command;
 }

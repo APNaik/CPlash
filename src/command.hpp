@@ -20,4 +20,5 @@ struct Command {
   Mode stderr_mode { Mode::TRUNC };
   
   bool empty { false } ;
+  bool run_in_background { false };
 };

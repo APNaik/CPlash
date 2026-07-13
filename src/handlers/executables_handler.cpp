@@ -8,6 +8,9 @@
 #include <iostream>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <fcntl.h>
+
+static int next_job_counter { 1 };
 
 namespace {
 
@@ -38,6 +41,15 @@ void handle_executables(const Command& command) {
 
   pid_t pid = fork();
   if (pid == 0) {
+    // process is in background so detach stdin from the terminal
+    // this prevents stealing inputs meant for parent process and causing seg-faults. 
+    if(command.run_in_background){
+      int dev_null = open("/dev/null", O_RDONLY);
+      if(dev_null >= 0){
+        dup2(dev_null, STDIN_FILENO);
+        close(dev_null);
+      }
+    }
     std::vector<char*> argv;
     argv.reserve(command.arguments.size() + 2);
     argv.push_back(const_cast<char*>(command_name.c_str()));
@@ -51,6 +63,12 @@ void handle_executables(const Command& command) {
     _exit(1);
   }
 
-  int status = 0;
-  waitpid(pid, &status, 0);
+  if(command.run_in_background){
+    std::cout << "[" << next_job_counter << "] " << pid << "\n";
+    next_job_counter++;
+  }
+  else{
+    int status = 0;
+    waitpid(pid, &status, 0);
+  }
 }

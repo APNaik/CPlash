@@ -8,6 +8,7 @@ The handler returned by the router is wrapped in a polymorphic function wrapper 
 #include "handlers/echo_handler.hpp"
 #include "handlers/executables_handler.hpp"
 #include "handlers/type_handler.hpp"
+#include "handlers/jobs_handler.hpp"
 
 Handler get_handler(const std::string& command_name) {
   if (command_name == "echo") {
@@ -16,6 +17,10 @@ Handler get_handler(const std::string& command_name) {
 
   if (command_name == "type") {
     return handle_type;
+  }
+
+  if(command_name == "jobs"){
+    return handle_jobs;
   }
 
   return handle_executables;
