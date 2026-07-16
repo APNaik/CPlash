@@ -1,6 +1,7 @@
 #include "helpers/extract_PATH_dirs.hpp"
 #include "helpers/find_check_perms.hpp"
 #include "helpers/builtins.hpp"
+#include "helpers/jobs.hpp"
 #include "executables_handler.hpp"
 #include "../command.hpp"
 
@@ -9,8 +10,6 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <fcntl.h>
-
-static int next_job_counter { 1 };
 
 namespace {
 
@@ -42,7 +41,7 @@ void handle_executables(const Command& command) {
   pid_t pid = fork();
   if (pid == 0) {
     // process is in background so detach stdin from the terminal
-    // this prevents stealing inputs meant for parent process and causing seg-faults. 
+    // this prevents, stealing inputs meant for parent process and causing seg-faults. 
     if(command.run_in_background){
       int dev_null = open("/dev/null", O_RDONLY);
       if(dev_null >= 0){
@@ -64,11 +63,23 @@ void handle_executables(const Command& command) {
   }
 
   if(command.run_in_background){
-    std::cout << "[" << next_job_counter << "] " << pid << "\n";
-    next_job_counter++;
+    int job_num { active_background_jobs.empty() ? 1 : active_background_jobs.back().job_number + 1 };
+    std::string cmd { command.raw };
+    for(auto &arg: command.arguments){
+      cmd += " " + arg;
+    }
+    cmd += " &";
+
+    std::cout << "[" << job_num << "] " << pid << "\n";
+    active_background_jobs.push_back({
+      job_num,
+      pid,
+      cmd,
+      "Running"
+    });
   }
   else{
-    int status = 0;
+    int status { 0 };
     waitpid(pid, &status, 0);
   }
 }
