@@ -42,8 +42,15 @@ void poll_and_process_jobs(bool display_running){
       marker = '-';
     }
     else marker = ' ';
+    
+    if (result == 0) {
+      job.status = "Running";
+    } 
+    else if (result > 0) {
+      job.status = "Done";
+    }
 
-    if(result == 0){    // Process is still executing
+    if(job.status == "Running"){    // Process is still executing
       if(display_running){
         std::cout << "[" << job.job_number << "]" << marker << "  "
                 << std::left << std::setw(24) << job.status
@@ -51,14 +58,12 @@ void poll_and_process_jobs(bool display_running){
       }
       next_cycle_jobs.push_back(job);
     }
-    else if(result > 0){    // Process is exited
-      job.status = "Done";
+    else if(job.status == "Done"){    // Process is exited
       jim.release_id(job.job_number);
       std::string display_cmd = job.command_string;
       if (display_cmd.ends_with(" &")) {
         display_cmd.erase(display_cmd.length() - 2);
       }
-            
       std::cout << "[" << job.job_number << "]" << marker << "  "
                 << std::left << std::setw(24) << job.status
                 << display_cmd << "\n";
