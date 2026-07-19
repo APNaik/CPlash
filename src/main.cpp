@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include "handlers/helpers/jobs.hpp"
 #include "handlers/completion_handler.hpp"
 #include "command_registry.hpp"
 #include "parser.hpp"
@@ -133,6 +134,7 @@ int main() {
     }
 
     handler(command);
+    poll_and_process_jobs(false);
   }
 
   return 0;

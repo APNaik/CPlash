@@ -63,7 +63,12 @@ void handle_executables(const Command& command) {
   }
 
   if(command.run_in_background){
-    int job_num { active_background_jobs.empty() ? 1 : active_background_jobs.back().job_number + 1 };
+    int job_num { jim.acquire_id() };
+    if (job_num == -1) {
+      std::cerr << "Error: Too many background jobs!\n";
+      return;
+    }
+    
     std::string cmd { command.raw };
     for(auto &arg: command.arguments){
       cmd += " " + arg;
