@@ -17,7 +17,6 @@ constexpr int MAX_JOBS { 1024 };
 
 class JobIDManager {
   std::bitset<MAX_JOBS> used_ids;
-
 public:
   int acquire_id();
   void release_id(int id);

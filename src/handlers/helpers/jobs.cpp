@@ -21,7 +21,7 @@ void JobIDManager::release_id(int id){
   }
 }
 
-JobIDManager jim;
+JobIDManager jim;     // jim has only one job; to manage ids of other jobs
 
 std::vector<Job> active_background_jobs;
 

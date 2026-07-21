@@ -5,6 +5,7 @@
 
 #include "handlers/helpers/jobs.hpp"
 #include "handlers/completion_handler.hpp"
+#include "execute_pipeline.hpp"
 #include "command_registry.hpp"
 #include "parser.hpp"
 
@@ -103,18 +104,25 @@ int main() {
 
     add_history(input.c_str());
 
-    const Command command { parse_command(input) };
-    if (command.empty) {
+    const auto parse_result { parse_composite_command(input) };
+    if(auto* pipeline { std::get_if<Pipeline> (&parse_result) }){
+      execute_pipeline(*pipeline);
+      poll_and_process_jobs(false);
       continue;
     }
 
-    if (command.raw == "exit") {
+    auto* command { std::get_if<Command> (&parse_result) };
+    if (!command || command->empty) {
+      continue;
+    }
+
+    if (command->raw == "exit") {
       break;
     }
 
-    const auto handler { get_handler(command.raw) };
+    const auto handler { get_handler(command->raw) };
     if (!handler) {
-      std::cout << command.raw << ": command not found\n";
+      std::cout << command->raw << ": command not found\n";
       continue;
     }
     
@@ -122,18 +130,18 @@ int main() {
     std::optional<FileRedirect> _stderr;
 
     // We have > or 1> token
-    if(command.stdout_redirect_path.has_value()){
-      _stdout.emplace(command.stdout_redirect_path.value(), STDOUT_FILENO, command.stdout_mode);
+    if(command->stdout_redirect_path.has_value()){
+      _stdout.emplace(command->stdout_redirect_path.value(), STDOUT_FILENO, command->stdout_mode);
       if(!_stdout->ok()) continue;
     }
     
     // We have 2> token
-    if(command.stderr_redirect_path.has_value()){
-      _stderr.emplace(command.stderr_redirect_path.value(), STDERR_FILENO, command.stderr_mode);
+    if(command->stderr_redirect_path.has_value()){
+      _stderr.emplace(command->stderr_redirect_path.value(), STDERR_FILENO, command->stderr_mode);
       if(!_stderr->ok()) continue;
     }
 
-    handler(command);
+    handler(*command);
     poll_and_process_jobs(false);
   }
 

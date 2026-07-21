@@ -1,5 +1,8 @@
 #pragma once
 
 #include "command.hpp"
+#include "pipeline.hpp"
 
-Command parse_command(const std::string& input);
+#include <variant>
+
+std::variant<Command, Pipeline> parse_composite_command(const std::string& input);

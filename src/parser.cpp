@@ -106,9 +106,38 @@ bool is_redirect_token(const std::string& token) {
          token == ">>" || token == "1>>" || token == "2>>";
 }
 
-}  // empty namespace keeps the functions private to the current file
+std::vector<std::string> split_by_pipe(const std::string& input){
+  std::vector<std::string> segments {};
+  std::string current {};
+  bool inside_single_quote { false };
+  bool inside_double_quote { false };
 
-Command parse_command(const std::string& input) {
+  for(size_t i { 0 }; i < input.length(); ++i){
+    char c { input[i] };
+    if(c == '\\' && i + 1 < input.length() && !inside_single_quote){
+      // We preserver the backslash so that parse_single_command function gets
+      // the required context correctly. The ignoring escaped chars is handled
+      // by parse_single_command;
+      current += c;
+      current += input[++i];
+      continue;
+    }
+    if(c == '\'' && !inside_double_quote) inside_single_quote = !inside_single_quote;
+    else if(c == '\"' && !inside_single_quote) inside_double_quote = !inside_double_quote;
+
+    if(c == '|' && !inside_double_quote && !inside_single_quote){
+      segments.push_back(current);
+      current.clear();
+    }
+    else{
+      current += c;
+    }
+  }
+  segments.push_back(current);     // catch the last segment
+  return segments;
+}
+
+Command parse_single_command(const std::string& input){
   Command command;
 
   const std::size_t first_non_space { find_first_non_space(input) };
@@ -167,9 +196,10 @@ Command parse_command(const std::string& input) {
       if (redirect_opt == ">" || redirect_opt == "1>" || redirect_opt == ">>" || redirect_opt == "1>>") {
         // Check if it's an append operation
         if (redirect_opt == ">>" || redirect_opt == "1>>") {
-            command.stdout_mode = Mode::APPEND;
-        } else {
-            command.stdout_mode = Mode::TRUNC;
+          command.stdout_mode = Mode::APPEND;
+        } 
+        else {
+          command.stdout_mode = Mode::TRUNC;
         }
         command.stdout_redirect_path = redirect_path;
       } 
@@ -177,7 +207,8 @@ Command parse_command(const std::string& input) {
         // Check if it's an append operation
         if (redirect_opt == "2>>") {
           command.stderr_mode = Mode::APPEND;
-        } else {
+        } 
+        else {
           command.stderr_mode = Mode::TRUNC;
         }
         command.stderr_redirect_path = redirect_path;
@@ -195,4 +226,24 @@ Command parse_command(const std::string& input) {
     command.arguments.pop_back();
   }
   return command;
+}
+
+}  // empty namespace keeps the functions private to the current file
+
+std::variant<Command, Pipeline> parse_composite_command(const std::string& input) {
+  std::vector<std::string> pipelined_commands { split_by_pipe(input) };
+  if(pipelined_commands.size() == 1) {
+    return parse_single_command(pipelined_commands[0]);
+  }
+
+  Pipeline pipeline;
+  for(const auto& segment: pipelined_commands){
+    Command cmd { parse_single_command(segment) };
+    if(cmd.empty){
+      return cmd;
+    }
+    pipeline.commands.push_back(cmd);
+  }
+
+  return pipeline;
 }
